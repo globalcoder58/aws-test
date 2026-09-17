@@ -1,24 +1,7 @@
 <script>
-    let message = '';
-    // @ts-ignore
-    /**
-     * @type {any[] | null | undefined}
-     */
-    let messages = [];
-
-    function sendMessage() {
-        const text = message.trim();
-        if (!text) return;
-        // @ts-ignore
-        messages = [...messages, text];
-        message = '';
-    }
-
-    // @ts-ignore
-    function handleKey(event) {
-        if (event.key === 'Enter') sendMessage();
-    }
+  import Chat from '$lib/components/Chat.svelte';
 </script>
+
 
 <div class="flex flex-col min-h-screen">
     <div class="container flex-grow flex items-center justify-center">
@@ -33,24 +16,10 @@
 
             <div class="badge">Chat with Lorelyn</div>
 
-            <div id="chat-container">
-                <div id="chat-messages">
-                    {#each messages as text}
-                        <div>{text}</div>
-                    {/each}
-                </div>
-                <div id="chat-input-row">
-                    <input
-                        type="text"
-                        id="chatInput"
-                        placeholder="Type a message..."
-                        bind:value={message}
-                        onkeydown={handleKey}
-                    />
-                    <button id="sendBtn" onclick={sendMessage}>Send</button>
-                </div>
-            </div>
+           <Chat />
+                    
         </main>
+    </div>
     </div>
 
    <footer class="footer mt-auto py-12 text-sm">
@@ -69,7 +38,7 @@
     </p>
 </footer>
 
-</div>
+
 
 <style>
     :global(body) {
