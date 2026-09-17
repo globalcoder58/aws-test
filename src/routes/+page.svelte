@@ -14,7 +14,7 @@
 
             <img class="avatar" src="/Lorelynn.png" alt="Lorelyn" />
 
-            <div class="badge">Chat with Lorelyn</div>
+            <div class="badge">...</div>
 
            <Chat />
                     

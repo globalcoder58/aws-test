@@ -78,14 +78,14 @@
 
 <div class="chat-wrapper">
   <div class="chat-header">
-    <h2>💬 Knowledge Base Chat</h2>
+    <h2>💬 Chat with Lorelyn</h2>
     <button class="new-chat-btn" on:click={newChat}>New Chat</button>
   </div>
 
   <div class="chat-messages" bind:this={chatContainer}>
     {#if messages.length === 0}
       <div class="empty-state">
-        <p>Ask me anything about your knowledge base!</p>
+        <p>Ask me anything about my allowance!</p>
       </div>
     {/if}
 
