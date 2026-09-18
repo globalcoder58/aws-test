@@ -4,4 +4,4 @@ Disallow: /nogooglebot/
 User-agent: *
 Allow: /
 
-Sitemap: https://main.drb2xrzs7b24c.amplifyapp.com/sitemap.xml
+Sitemap: https://main.ddie2rsfw1pf9.amplifyapp.com/sitemap.xml

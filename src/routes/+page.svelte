@@ -6,10 +6,12 @@
 <div class="flex flex-col min-h-screen">
     <div class="container flex-grow flex items-center justify-center">
         <main>
-            <h1>Welcome to <span>AWS Playground</span></h1>
+            <h1>Welcome to <span class="title-highlight">Filipina Single Moms</span></h1>
             <p>
-                The fastest way to build high-performance web applications. 
-                Ready to dive in?
+                Lorelyn is a caring and family-oriented woman who is deeply attached to the people she loves. 
+                She is affectionate, persistent, and often turns to those close to her for emotional and practical support. 
+                Despite her financial challenges, she has expressed a strong desire to become independent and build a better 
+                future for herself and her family.
             </p>
 
             <img class="avatar" src="/Lorelynn.png" alt="Lorelyn" />
@@ -76,6 +78,10 @@
         font-size: clamp(2.5rem, 8vw, 4rem);
         margin: 0 0 1rem 0;
         line-height: 1.1;
+    }
+
+    .title-highlight {
+        color: lightblue;
     }
 
     p {
