@@ -1,6 +1,8 @@
-
 <script lang="ts">
-  import { onMount } from 'svelte';
+  interface Citation {
+    text: string;
+    references: { content: string; source: string }[];
+  }
 
   interface Message {
     role: 'user' | 'assistant';
@@ -8,24 +10,29 @@
     citations?: Citation[];
   }
 
-  interface Citation {
-    text: string;
-    references: { content: string; source: string }[];
-  }
-
   let messages: Message[] = [];
   let input = '';
   let loading = false;
-  let conversationId = crypto.randomUUID();
+  let conversationId = createConversationId();
   let chatContainer: HTMLDivElement;
+
+  function createConversationId(): string {
+    return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
 
     const userMessage = input.trim();
     input = '';
-    messages = [...messages, { role: 'user', content: userMessage }];
     loading = true;
+
+    // Add user message
+    messages = [...messages, { role: 'user', content: userMessage }];
+
+    // Add empty assistant message that will be streamed into
+    messages = [...messages, { role: 'assistant', content: '', citations: [] }];
+    const assistantIndex = messages.length - 1;
 
     try {
       const response = await fetch('/api/chat', {
@@ -38,21 +45,78 @@
       });
 
       if (!response.ok) throw new Error('Failed to get response');
+      if (!response.body) throw new Error('No response body');
 
-      const data = await response.json();
-      messages = [
-        ...messages,
-        {
-          role: 'assistant',
-          content: data.answer,
-          citations: data.citations
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      const processEvent = (event: string) => {
+        const dataLine = event
+          .split(/\r?\n/)
+          .find((line) => line.trim().startsWith('data:'))
+          ?.trim();
+
+        if (!dataLine) return;
+
+        try {
+          const data = JSON.parse(dataLine.slice(5).trim());
+
+          if (data.type === 'text') {
+            messages[assistantIndex] = {
+              ...messages[assistantIndex],
+              content: messages[assistantIndex].content + (data.content ?? '')
+            };
+            messages = [...messages];
+          }
+
+          if (data.type === 'citations') {
+            messages[assistantIndex] = {
+              ...messages[assistantIndex],
+              citations: [
+                ...(messages[assistantIndex].citations ?? []),
+                ...(data.citations ?? [])
+              ]
+            };
+            messages = [...messages];
+          }
+
+          if (data.type === 'error') {
+            messages[assistantIndex] = {
+              ...messages[assistantIndex],
+              content: messages[assistantIndex].content || 'Sorry, something went wrong.'
+            };
+            messages = [...messages];
+          }
+        } catch {
+          // Skip malformed JSON
         }
-      ];
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          if (buffer.trim()) processEvent(buffer);
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE events from the buffer
+        const lines = buffer.split(/\r?\n\r?\n/);
+        buffer = lines.pop() ?? ''; // Keep incomplete chunk in buffer
+
+        for (const line of lines) processEvent(line);
+      }
     } catch (error) {
-      messages = [
-        ...messages,
-        { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }
-      ];
+      // If streaming failed entirely, update the assistant message
+      if (!messages[assistantIndex].content) {
+        messages[assistantIndex] = {
+          ...messages[assistantIndex],
+          content: 'Sorry, something went wrong. Please try again.'
+        };
+        messages = [...messages];
+      }
     } finally {
       loading = false;
     }
@@ -67,19 +131,22 @@
 
   function newChat() {
     messages = [];
-    conversationId = crypto.randomUUID();
+    conversationId = createConversationId();
   }
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom as text streams in
   $: if (messages.length && chatContainer) {
-    setTimeout(() => chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' }), 100);
+    setTimeout(
+      () => chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' }),
+      50
+    );
   }
 </script>
 
 <div class="chat-wrapper">
   <div class="chat-header">
     <h2>💬 Chat with Lorelyn</h2>
-    <button class="new-chat-btn" on:click={newChat}>New Chat</button>
+    <button class="new-chat-btn" on:click={newChat} disabled={loading}>New Chat</button>
   </div>
 
   <div class="chat-messages" bind:this={chatContainer}>
@@ -89,14 +156,22 @@
       </div>
     {/if}
 
-    {#each messages as message}
+    {#each messages as message, i}
       <div class="message {message.role}">
         <div class="message-bubble">
-          <p>{message.content}</p>
+          {#if message.role === 'assistant' && !message.content && loading && i === messages.length - 1}
+            <div class="loading-dots">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+          {:else}
+            <p>{message.content}</p>
+          {/if}
 
           {#if message.citations?.length}
             <details class="citations">
-              <summary>📎 Sources ({message.citations.length})</summary>
+              <summary>📚 Sources ({message.citations.length})</summary>
               {#each message.citations as citation}
                 {#if citation.references}
                   {#each citation.references as ref}
@@ -112,16 +187,6 @@
         </div>
       </div>
     {/each}
-
-    {#if loading}
-      <div class="message assistant">
-        <div class="message-bubble loading">
-          <span class="dot"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-        </div>
-      </div>
-    {/if}
   </div>
 
   <div class="chat-input">
@@ -133,7 +198,7 @@
       disabled={loading}
     ></textarea>
     <button on:click={sendMessage} disabled={loading || !input.trim()}>
-      Send
+      {loading ? '...' : 'Send'}
     </button>
   </div>
 </div>
@@ -202,53 +267,14 @@
   }
 
   .message.assistant .message-bubble {
-    background: #f0f0f0;
-    color: #333;
+    background: #f1f1f1;
+    color: #222;
     border-bottom-left-radius: 4px;
   }
 
-  .message-bubble p { margin: 0; }
-
-  .citations {
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
-  }
-
-  .citations summary {
-    cursor: pointer;
-    color: #555;
-  }
-
-  .citation-item {
-    margin-top: 0.4rem;
-    padding: 0.4rem;
-    background: rgba(0,0,0,0.05);
-    border-radius: 4px;
-  }
-
-  .source { font-weight: 600; font-size: 0.8rem; color: #007bff; }
-  .excerpt { margin: 0.2rem 0 0; font-size: 0.8rem; color: #666; }
-
-  .loading {
-    display: flex;
-    gap: 4px;
-    padding: 1rem;
-  }
-
-  .dot {
-    width: 8px;
-    height: 8px;
-    background: #999;
-    border-radius: 50%;
-    animation: bounce 1.4s infinite ease-in-out both;
-  }
-
-  .dot:nth-child(1) { animation-delay: -0.32s; }
-  .dot:nth-child(2) { animation-delay: -0.16s; }
-
-  @keyframes bounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1); }
+  .message-bubble p {
+    margin: 0;
+    white-space: pre-wrap;
   }
 
   .chat-input {
@@ -258,29 +284,62 @@
     border-top: 1px solid #e0e0e0;
   }
 
-  textarea {
+  .chat-input textarea {
     flex: 1;
-    padding: 0.6rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
     resize: none;
-    font-size: 1rem;
-    font-family: inherit;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font: inherit;
   }
 
   .chat-input button {
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-radius: 6px;
     background: #007bff;
     color: white;
-    border: none;
-    border-radius: 8px;
     cursor: pointer;
-    font-size: 1rem;
   }
 
   .chat-input button:disabled {
-    background: #ccc;
+    opacity: 0.6;
     cursor: not-allowed;
   }
+
+  .loading-dots {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #888;
+    animation: blink 1.2s infinite ease-in-out;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+  }
+
+  .citations {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .citation-item {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #ddd;
+  }
+
+  .source { font-weight: 600; }
+  .excerpt { margin: 0.25rem 0 0; }
 </style>
 
