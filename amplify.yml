@@ -1,0 +1,22 @@
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 18
+        - nvm use 18
+        - npm ci
+    build:
+      commands:
+        - env | grep -e BEDROCK_KB_ID -e MY_ACCESS_KEY_ID -e MY_SECRET_ACCESS_KEY >> .env 2>/dev/null || true
+        - npm run build
+  artifacts:
+    baseDirectory: .amplify-hosting
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .npm/**/*
+      - node_modules/**/*
+
