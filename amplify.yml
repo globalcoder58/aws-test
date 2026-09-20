@@ -1,25 +1,24 @@
-﻿version: 1
+﻿
+version: 1
 frontend:
   phases:
     preBuild:
       commands:
         - nvm install 20
         - nvm use 20
+        - rm -rf node_modules .svelte-kit build .amplify-hosting
         - npm ci
     build:
       commands:
         - npm run build
-        - echo "=== DEBUG - Looking for deploy-manifest.json ==="
-        - find. -name "deploy-manifest.json" -not -path "*/node_modules/*" || echo "NOT FOUND ANYWHERE"
-        - echo "=== DEBUG - .amplify-hosting contents ==="
-        - ls -la .amplify-hosting/ || echo ".amplify-hosting directory NOT FOUND"
-        - echo "=== DEBUG - build directory contents ==="
-        - ls -la build/ || echo "build directory NOT FOUND"
+        - echo "=== Verifying build output ==="
+        - ls -la build/
+        - cat build/deploy-manifest.json
   artifacts:
-    baseDirectory: .amplify-hosting
+    baseDirectory: build
     files:
       - '**/*'
   cache:
     paths:
       - .npm/**/*
-      - node_modules/**/*
+
