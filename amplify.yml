@@ -1,5 +1,4 @@
-
-version: 1
+﻿version: 1
 frontend:
   phases:
     preBuild:
@@ -9,8 +8,13 @@ frontend:
         - npm ci
     build:
       commands:
-        - env | grep -e BEDROCK_KB_ID -e MY_ACCESS_KEY_ID -e MY_SECRET_ACCESS_KEY >> .env 2>/dev/null || true
         - npm run build
+        - echo "=== DEBUG - Looking for deploy-manifest.json ==="
+        - find. -name "deploy-manifest.json" -not -path "*/node_modules/*" || echo "NOT FOUND ANYWHERE"
+        - echo "=== DEBUG - .amplify-hosting contents ==="
+        - ls -la .amplify-hosting/ || echo ".amplify-hosting directory NOT FOUND"
+        - echo "=== DEBUG - build directory contents ==="
+        - ls -la build/ || echo "build directory NOT FOUND"
   artifacts:
     baseDirectory: .amplify-hosting
     files:
@@ -19,4 +23,3 @@ frontend:
     paths:
       - .npm/**/*
       - node_modules/**/*
-
