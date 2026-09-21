@@ -1,5 +1,4 @@
 
-import type { RequestHandler } from './$types';
 import {
   BedrockAgentRuntimeClient,
   RetrieveAndGenerateStreamCommand,
@@ -19,7 +18,7 @@ function getClient() {
   });
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST = async ({ request }: { request: Request }) => {
   // 🔍 DEBUG — Remove after fixing
   console.log('ENV CHECK:', {
     hasAccessKey: !!process.env.MY_ACCESS_KEY_ID,
