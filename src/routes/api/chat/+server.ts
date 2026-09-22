@@ -1,5 +1,4 @@
 
-import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import {
   BedrockAgentRuntimeClient,
@@ -13,18 +12,18 @@ function getClient() {
   return new BedrockAgentRuntimeClient({
     region: 'eu-central-1',
     credentials: {
-      accessKeyId: env.MY_ACCESS_KEY_ID ?? '',
-      secretAccessKey: env.MY_SECRET_ACCESS_KEY ?? ''
+      accessKeyId: process.env.MY_ACCESS_KEY_ID ?? '',
+      secretAccessKey: process.env.MY_SECRET_ACCESS_KEY ?? ''
     }
   });
 }
 
 export const POST: RequestHandler = async ({ request }) => {
   console.log('ENV CHECK:', {
-    hasAccessKey: !!env.MY_ACCESS_KEY_ID,
-    accessKeyPrefix: env.MY_ACCESS_KEY_ID?.slice(0, 8) ?? 'MISSING',
-    hasSecretKey: !!env.MY_SECRET_ACCESS_KEY,
-    kbId: env.BEDROCK_KB_ID ?? 'MISSING'
+    hasAccessKey: !!process.env.MY_ACCESS_KEY_ID,
+    accessKeyPrefix: process.env.MY_ACCESS_KEY_ID?.slice(0, 8) ?? 'MISSING',
+    hasSecretKey: !!process.env.MY_SECRET_ACCESS_KEY,
+    kbId: process.env.BEDROCK_KB_ID ?? 'MISSING'
   });
 
   const client = getClient();
@@ -44,7 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
       retrieveAndGenerateConfiguration: {
         type: 'KNOWLEDGE_BASE',
         knowledgeBaseConfiguration: {
-          knowledgeBaseId: env.BEDROCK_KB_ID ?? '',
+          knowledgeBaseId: process.env.BEDROCK_KB_ID ?? '',
           modelArn: 'arn:aws:bedrock:eu-central-1:864429128328:inference-profile/eu.amazon.nova-pro-v1:0',
 
           retrievalConfiguration: {
