@@ -47,10 +47,11 @@
   </main>
 
   <footer class="footer">
+  <p>created with AWS Bedrock + Sveltekit</p>
     <p>
       © {new Date().getFullYear()} | Built by
       <a
-        href="https://uspekhi.web.app"
+        href="https://uspekhi.web.app/contact"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Visit USPEKHI Web Development"
@@ -189,21 +190,6 @@
     backdrop-filter: blur(14px);
   }
 
-  .chat-heading-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.15rem;
-    border-bottom: 1px solid rgba(173, 216, 230, 0.16);
-  }
-
-  .chat-heading {
-    margin: 0;
-    color: #f8fafc;
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
   .footer {
     width: min(100% - 2rem, 980px);
     margin: 0 auto;
@@ -251,9 +237,6 @@
       line-height: 1.65;
     }
 
-    .chat-heading-row {
-      padding: 0.9rem 1rem;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {

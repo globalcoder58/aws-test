@@ -134,6 +134,30 @@
     conversationId = createConversationId();
   }
 
+  function saveAndShare() {
+    if (messages.length === 0) return;
+    
+    const chatText = messages
+      .map(m => `${m.role === 'user' ? 'You' : 'Lorelyn'}: ${m.content}`)
+      .join('\n\n');
+      
+    const blob = new Blob([chatText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-with-lorelyn-${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    navigator.clipboard.writeText(chatText).then(() => {
+      alert('Chat history copied to clipboard and saved as a file!');
+    }).catch(() => {
+      alert('Chat history saved as a file!');
+    });
+  }
+
   // Auto-scroll to bottom as text streams in
   $: if (messages.length && chatContainer) {
     setTimeout(
@@ -146,7 +170,13 @@
 <div class="chat-wrapper">
   <div class="chat-header">
     <h2>💬 Chat with Lorelyn</h2>
-    <button class="new-chat-btn" on:click={newChat} disabled={loading}>New Chat</button>
+    <div class="header-actions">
+      <button class="save-share-btn" on:click={saveAndShare} disabled={messages.length === 0 || loading}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+        Save & Share
+      </button>
+      <button class="new-chat-btn" on:click={newChat} disabled={loading}>New Chat</button>
+    </div>
   </div>
 
   <div class="chat-messages" bind:this={chatContainer}>
@@ -243,7 +273,16 @@
     line-height: 1.3;
   }
 
-  .new-chat-btn {
+  .header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .new-chat-btn, .save-share-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     min-height: 38px;
     padding: 0.5rem 0.85rem;
     border: 1px solid rgba(169, 223, 242, 0.28);
@@ -261,13 +300,13 @@
       background 160ms ease;
   }
 
-  .new-chat-btn:hover:not(:disabled) {
+  .new-chat-btn:hover:not(:disabled), .save-share-btn:hover:not(:disabled) {
     border-color: rgba(110, 231, 255, 0.7);
     background: rgba(110, 231, 255, 0.18);
     transform: translateY(-1px);
   }
 
-  .new-chat-btn:disabled {
+  .new-chat-btn:disabled, .save-share-btn:disabled {
     cursor: not-allowed;
     opacity: 0.55;
   }
@@ -484,6 +523,7 @@
   }
 
   .new-chat-btn:focus-visible,
+  .save-share-btn:focus-visible,
   .chat-input textarea:focus-visible,
   .chat-input button:focus-visible {
     outline: 3px solid rgba(110, 231, 255, 0.8);
@@ -504,7 +544,7 @@
       font-size: 0.95rem;
     }
 
-    .new-chat-btn {
+    .new-chat-btn, .save-share-btn {
       padding-inline: 0.7rem;
       font-size: 0.8rem;
     }
@@ -532,6 +572,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .new-chat-btn,
+    .save-share-btn,
     .chat-input textarea,
     .chat-input button,
     .dot {
