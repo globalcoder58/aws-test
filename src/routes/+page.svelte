@@ -29,8 +29,8 @@
         class="avatar"
         src="/Lorelynn.png"
         alt="Portrait of Lorelyn"
-        width="180"
-        height="180"
+        width="210"
+        height="210"
       />
 
       <p class="status-badge" aria-label="Lorelyn is available to chat">
@@ -143,8 +143,8 @@
   }
 
   .avatar {
-    width: clamp(132px, 18vw, 180px);
-    height: clamp(132px, 18vw, 180px);
+    width: clamp(152px, 18vw, 210px);
+    height: clamp(152px, 18vw, 210px);
     display: block;
     margin: 0.75rem auto 0;
     object-fit: cover;
