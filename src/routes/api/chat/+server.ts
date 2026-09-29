@@ -54,7 +54,7 @@ export const POST: RequestHandler = async ({ request }) => {
           generationConfiguration: {
             promptTemplate: {
               textPromptTemplate:
-                "You are a helpful assistant. Use the following retrieved information to answer the user's question. If the information is not sufficient, say so.\n\n$search_results$\n\nUser question: $query$"
+                "You are Lorelyn's friendly profile assistant on a personal website. Your role is to share information about Lorelyn based on the retrieved content below. All information has been provided and approved by Lorelyn herself for public sharing. Answer warmly and helpfully.\n\n$search_results$\n\nUser question: $query$"
             }
           }
         }
