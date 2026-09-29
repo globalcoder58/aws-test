@@ -23,7 +23,8 @@ export const POST: RequestHandler = async ({ request }) => {
     hasAccessKey: !!process.env.MY_ACCESS_KEY_ID,
     accessKeyPrefix: process.env.MY_ACCESS_KEY_ID?.slice(0, 8) ?? 'MISSING',
     hasSecretKey: !!process.env.MY_SECRET_ACCESS_KEY,
-    kbId: process.env.BEDROCK_KB_ID ?? 'MISSING'
+    kbId: process.env.BEDROCK_KB_ID ?? 'MISSING',
+    guardrailId: process.env.GUARDRAIL_ID ?? 'MISSING'
   });
 
   const client = getClient();
@@ -38,25 +39,36 @@ export const POST: RequestHandler = async ({ request }) => {
       });
     }
 
+    // Build generation config with optional guardrail
+    const generationConfig: Record<string, unknown> = {
+      promptTemplate: {
+        textPromptTemplate:
+          "You are Lorelyn's friendly profile assistant on a personal website. Your role is to share information about Lorelyn based on the retrieved content below. All information has been provided and approved by Lorelyn herself for public sharing. Answer warmly and helpfully.\n\n$search_results$\n\nUser question: $query$"
+      }
+    };
+
+    // Only add guardrail if the env variable is set
+    if (process.env.GUARDRAIL_ID) {
+      generationConfig.guardrailConfiguration = {
+        guardrailId: process.env.GUARDRAIL_ID,
+        guardrailVersion: 'DRAFT'
+      };
+    }
+
     const input: RetrieveAndGenerateStreamCommandInput = {
       input: { text: message },
       retrieveAndGenerateConfiguration: {
         type: 'KNOWLEDGE_BASE',
         knowledgeBaseConfiguration: {
           knowledgeBaseId: process.env.BEDROCK_KB_ID ?? '',
-          modelArn: 'arn:aws:bedrock:eu-central-1:864429128328:inference-profile/eu.amazon.nova-pro-v1:0',
+         modelArn: 'arn:aws:bedrock:eu-central-1:864429128328:inference-profile/eu.amazon.nova-micro-v1:0',
 
           retrievalConfiguration: {
             vectorSearchConfiguration: {
               numberOfResults: 5
             }
           },
-          generationConfiguration: {
-            promptTemplate: {
-              textPromptTemplate:
-                "You are Lorelyn's friendly profile assistant on a personal website. Your role is to share information about Lorelyn based on the retrieved content below. All information has been provided and approved by Lorelyn herself for public sharing. Answer warmly and helpfully.\n\n$search_results$\n\nUser question: $query$"
-            }
-          }
+          generationConfiguration: generationConfig
         }
       }
     };
